@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import axios from 'axios';
 import dynamic from 'next/dynamic';
 import { LogOut, Bell, Activity, MapPin, TrendingUp, AlertCircle } from 'lucide-react';
@@ -13,7 +12,7 @@ import SensorChart from '@/components/SensorChart';
 import SensorTrendCard from '@/components/SensorTrendCard';
 import SensorZoneHeatmap from '@/components/SensorZoneHeatmap';
 import FarmerProfile from '@/components/FarmerProfile';
-import FarmerProfileDetails from '@/components/FarmerProfileDetails';
+import FarmerBioCard from '@/components/FarmerBioCard';
 import SensorHealthMonitor from '@/components/SensorHealthMonitor';
 import SensorHealthPanel from '@/components/SensorHealthPanel';
 import AlertsPanel from '@/components/AlertsPanel';
@@ -126,25 +125,27 @@ export default function FarmerDashboard() {
 
   const fetchFarmData = async () => {
     try {
-      const idToken = await auth.currentUser?.getIdToken();
+      // Get Supabase session token
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
 
       // Get farm details
       const farmResponse = await axios.get(`${API_URL}/api/farms/user/${user?.uid}`, {
-        headers: { Authorization: `Bearer ${idToken}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setFarm(farmResponse.data);
 
       // Get latest sensor data
       const sensorResponse = await axios.get(
         `${API_URL}/api/sensors/farm/${farmResponse.data._id}/latest`,
-        { headers: { Authorization: `Bearer ${idToken}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setCurrentData(sensorResponse.data);
 
       // Get historical data (last 24 hours)
       const historyResponse = await axios.get(
         `${API_URL}/api/sensors/farm/${farmResponse.data._id}/history?hours=24&limit=50`,
-        { headers: { Authorization: `Bearer ${idToken}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setHistoricalData(historyResponse.data);
 
@@ -156,14 +157,14 @@ export default function FarmerDashboard() {
           longitude: farmResponse.data.location.coordinates[0],
           radiusKm: 10,
         },
-        { headers: { Authorization: `Bearer ${idToken}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setNearbyFarms(nearbyResponse.data);
 
       // Get alerts
       const alertsResponse = await axios.get(
         `${API_URL}/api/alerts/farm/${farmResponse.data._id}?limit=10`,
-        { headers: { Authorization: `Bearer ${idToken}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setAlerts(alertsResponse.data);
 
@@ -457,7 +458,7 @@ export default function FarmerDashboard() {
   };
 
   const handleLogout = async () => {
-    await signOut(auth);
+    await supabase.auth.signOut();
     logout();
     router.push('/');
   };
@@ -519,113 +520,6 @@ export default function FarmerDashboard() {
                 Disease conditions detected. Take immediate preventive action.
               </p>
             </div>
-          </div>
-        )}
-
-        {/* Enhanced Farmer Profile Details */}
-        {farm && (
-          <div className="mb-8">
-            <FarmerProfileDetails
-              farmer={{
-                ownerName: 'Rajesh Kumar', // Replace with actual owner name
-                email: user?.email || '',
-                phone: '+91 98765 43210',
-                aadhaarNumber: '123456789012', // Will be masked in component
-                panCard: 'ABCDE1234F',
-                address: {
-                  street: '123 Village Road',
-                  city: 'Kolkata',
-                  district: farm.district || 'North 24 Parganas',
-                  state: 'West Bengal',
-                  pincode: '700001',
-                  gpsCoordinates: {
-                    latitude: farm.location.coordinates[1],
-                    longitude: farm.location.coordinates[0],
-                  },
-                },
-                farmName: farm.farmName,
-                poultryFarmId: `WB-PF-${farm._id.slice(-8).toUpperCase()}`,
-                farmType: 'Broiler',
-                farmSize: {
-                  value: 5000,
-                  unit: 'sq_feet',
-                },
-                numberOfBirds: 2500,
-                shedLayout: {
-                  numberOfSheds: 3,
-                  shedCapacity: 850,
-                  description: '3 climate-controlled sheds with automated feeding and ventilation systems',
-                },
-                equipment: [
-                  {
-                    name: 'Auto Feeders',
-                    type: 'Feeder',
-                    quantity: 12,
-                    brand: 'FarmTech Pro',
-                    status: 'Operational',
-                    installationDate: '2024-01-15',
-                    lastMaintenanceDate: '2025-09-10',
-                  },
-                  {
-                    name: 'Nipple Drinkers',
-                    type: 'Drinker',
-                    quantity: 50,
-                    brand: 'AquaFlow',
-                    status: 'Operational',
-                    installationDate: '2024-01-15',
-                  },
-                  {
-                    name: 'Exhaust Fans',
-                    type: 'Ventilation',
-                    quantity: 6,
-                    brand: 'AirMax',
-                    status: 'Operational',
-                    installationDate: '2024-02-01',
-                    lastMaintenanceDate: '2025-10-01',
-                  },
-                ],
-                governmentLicense: {
-                  licenseNumber: 'WB-ARD-2024-1234',
-                  issuingAuthority: 'West Bengal Animal Resources Development Department',
-                  issueDate: '2024-01-01',
-                  expiryDate: '2026-12-31',
-                  status: 'Active',
-                },
-                environmentalCompliance: {
-                  nocNumber: 'WB-PCB-2024-5678',
-                  issuingAuthority: 'West Bengal Pollution Control Board',
-                  issueDate: '2024-01-10',
-                  expiryDate: '2027-01-09',
-                },
-                insurance: {
-                  policyNumber: 'LI-PF-2024-9876',
-                  provider: 'National Insurance Company',
-                  policyType: 'Livestock Insurance',
-                  coverageAmount: 2500000,
-                  startDate: '2024-02-01',
-                  expiryDate: '2025-01-31',
-                },
-                veterinaryCare: [
-                  {
-                    doctorName: 'Dr. Amit Sen',
-                    licenseNumber: 'WB-VET-12345',
-                    phone: '+91 98700 12345',
-                    visitDate: '2025-10-15',
-                    purpose: 'Routine Checkup',
-                    findings: 'All birds healthy, recommended vitamin supplements',
-                    nextVisitDate: '2025-11-15',
-                  },
-                  {
-                    doctorName: 'Dr. Priya Sharma',
-                    licenseNumber: 'WB-VET-67890',
-                    phone: '+91 98700 67890',
-                    visitDate: '2025-09-20',
-                    purpose: 'Vaccination',
-                    findings: 'Newcastle disease vaccination completed for entire flock',
-                  },
-                ],
-              }}
-            />
           </div>
         )}
 
@@ -797,8 +691,28 @@ export default function FarmerDashboard() {
             </div>
           </div>
 
-          {/* Alerts Panel */}
-          <div className="lg:col-span-1">
+          {/* Right Sidebar - Farmer Bio & Alerts */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Farmer Bio Card */}
+            {farm && (
+              <FarmerBioCard
+                farmer={{
+                  ownerName: 'Rajesh Kumar',
+                  email: user?.email || 'farmer@test.com',
+                  phone: '+91 98765 43210',
+                  aadhaarNumber: '123456789012',
+                  panCard: 'ABCDE1234F',
+                  farmName: farm.farmName,
+                  poultryFarmId: `WB-PF-${farm._id.slice(-8).toUpperCase()}`,
+                  farmType: 'Broiler',
+                  district: farm.district || 'North 24 Parganas',
+                  licenseNumber: 'WB-ARD-2024-1234',
+                  licenseStatus: 'Active',
+                }}
+              />
+            )}
+
+            {/* Alerts Panel */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Bell className="w-5 h-5 text-yellow-600" />

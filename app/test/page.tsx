@@ -35,6 +35,9 @@ export default function TestLoginPage() {
         <p className="mt-4 text-lg font-semibold text-gray-700">
           Bypassing login... Redirecting to dashboard
         </p>
+        <p className="mt-2 text-sm text-gray-500">
+          Auto-logging in as farmer1@test.com
+        </p>
       </div>
     </div>
   );

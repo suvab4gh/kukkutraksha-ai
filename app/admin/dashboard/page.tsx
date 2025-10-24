@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import axios from 'axios';
 import { LogOut, Map, TrendingUp, AlertTriangle, Activity, Users } from 'lucide-react';
 import AdminMap from '@/components/AdminMap';
@@ -50,11 +49,13 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const idToken = await auth.currentUser?.getIdToken();
+      // Get Supabase session token
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
 
       // Get all farms
       const farmsResponse = await axios.get(`${API_URL}/api/farms`, {
-        headers: { Authorization: `Bearer ${idToken}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setFarms(farmsResponse.data);
 
@@ -82,8 +83,8 @@ export default function AdminDashboard() {
       });
 
       // Get recent alerts
-      const alertsResponse = await axios.get(`${API_URL}/api/alerts?limit=20`, {
-        headers: { Authorization: `Bearer ${idToken}` },
+      const alertsResponse = await axios.get(`${API_URL}/api/alerts/recent?limit=50`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       setAlerts(alertsResponse.data);
 
@@ -95,7 +96,7 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = async () => {
-    await signOut(auth);
+    await supabase.auth.signOut();
     logout();
     router.push('/');
   };
