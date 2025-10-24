@@ -1,51 +1,31 @@
 # 🐔 Poultry Disease Monitoring System
 
-A full-stack IoT-based web application for early detection and monitoring of poultry diseases using real-time sensor data from ESP32 devices.
+A full-stack IoT-based web application for real-time poultry disease monitoring using ESP32 sensors, MQTT, and machine learning algorithms.
 
 ## 🌟 Features
 
-### Farmer Dashboard
-- ✅ Secure authentication with Firebase Auth (Real ID/Aadhar registration)
-- 📊 Real-time sensor monitoring (Ammonia, CO₂, TDS, Temperature, Humidity)
-- 🚦 Color-coded risk indicators (🟩 Green = Safe, 🟨 Yellow = Warning, 🟥 Red = Critical)
-- 🗺️ Interactive map showing farm location and nearby affected farms
-- 📈 Historical data visualization with trend charts
-- 🔔 Real-time alerts and notifications
-- 📍 Proximity alerts for nearby disease outbreaks
-
-### Admin Dashboard
-- 🗺️ District-level map of West Bengal showing all registered farms
-- 📊 Comprehensive analytics and disease spread tracking
-- 🎯 Farm status monitoring with color-coded markers
-- 📈 Statistical insights and reports
-- 🔍 Farm search and filtering capabilities
-
-### Backend Features
-- 🔗 MQTT integration with HiveMQ broker
-- 💾 MongoDB Atlas for data storage
-- 🤖 Automated disease detection algorithms
-- 📡 WebSocket support for real-time updates
-- ⏰ Cron jobs for sensor health monitoring
-- 🔒 Secure API with Firebase Admin SDK
+- **Real-time Sensor Monitoring**: Ammonia, CO₂, Temperature, TDS, Humidity
+- **Disease Detection**: Automated algorithms with color-coded risk indicators
+- **Interactive Maps**: OpenStreetMap integration for farm locations
+- **Admin Dashboard**: District-level monitoring for West Bengal farms
+- **Emergency Alerts**: Direct communication system for critical situations
+- **Health Analytics**: iPhone-style sensor health monitoring
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 16 with TypeScript
-- **Styling**: TailwindCSS 4.1.16
-- **State Management**: Zustand
-- **Maps**: Leaflet.js with OpenStreetMap
-- **Charts**: Recharts
-- **Authentication**: Firebase Auth
-- **Real-time**: WebSocket & MQTT over WebSocket
+- Next.js 16 + React 19 + TypeScript
+- TailwindCSS 4.1.16
+- Supabase (Auth + PostgreSQL)
+- Leaflet.js (Maps)
+- Recharts (Data Visualization)
 
 ### Backend
-- **Runtime**: Node.js with Express
-- **Database**: MongoDB Atlas
-- **MQTT Broker**: HiveMQ Cloud
-- **Authentication**: Firebase Admin SDK
-- **Real-time**: WebSocket (ws)
-- **Task Scheduling**: node-cron
+- Node.js 25 + Express
+- MongoDB Atlas (Sensor Time-series Data)
+- Supabase PostgreSQL (User/Farm Data)
+- HiveMQ (MQTT Broker)
+- WebSocket (Real-time Updates)
 
 ## 📁 Project Structure
 
@@ -94,128 +74,127 @@ poultry/
 └── next.config.mjs
 ```
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm
-- MongoDB Atlas account
-- HiveMQ Cloud account
-- Firebase project
+- Node.js 25+
+- Supabase Account
+- MongoDB Atlas Account
+- HiveMQ Cloud Account
 
-### 1. Clone the Repository
+### 1. Clone & Install
 ```bash
-git clone <repository-url>
+git clone https://github.com/suvab4gh/poultry-iot-monitoring.git
 cd poultry
-```
-
-### 2. Install Frontend Dependencies
-```bash
 npm install
+cd backend && npm install && cd ..
 ```
 
-### 3. Install Backend Dependencies
-```bash
-cd backend
-npm install
-cd ..
-```
+### 2. Environment Setup
 
-### 4. Configure Environment Variables
-
-#### Frontend (.env.local)
+**Frontend (.env.local)**
 ```env
-# Firebase Configuration
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-
-# Backend API URL
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 NEXT_PUBLIC_API_URL=http://localhost:5000
-
-# MQTT Configuration (for client-side MQTT if needed)
 NEXT_PUBLIC_MQTT_BROKER_URL=wss://your-hivemq-broker.com:8884/mqtt
 ```
 
-#### Backend (backend/.env)
+**Backend (backend/.env)**
 ```env
-# MongoDB Configuration
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/poultry-monitoring?retryWrites=true&w=majority
-
-# Server Configuration
+MONGODB_URI=your_mongodb_connection_string
 PORT=5000
 NODE_ENV=development
-
-# Firebase Admin SDK
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_CLIENT_EMAIL=your_client_email
-FIREBASE_PRIVATE_KEY="your_private_key"
-
-# HiveMQ MQTT Broker
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_KEY=your_supabase_service_key
 MQTT_BROKER_URL=mqtt://your-hivemq-broker.com:1883
 MQTT_USERNAME=your_username
 MQTT_PASSWORD=your_password
 MQTT_TOPIC=poultry/sensors/#
-
-# CORS Origin
 CORS_ORIGIN=http://localhost:3000
-
-# Proximity Alert Distance (km)
-ALERT_RADIUS_KM=5
 ```
 
-### 5. Set Up Firebase
+### 3. Supabase Setup
 
-1. Create a Firebase project at https://console.firebase.google.com
-2. Enable **Authentication** → **Email/Password** sign-in method
-3. Download Firebase Admin SDK private key:
-   - Go to Project Settings → Service Accounts
-   - Click "Generate New Private Key"
-   - Copy the values to your backend `.env` file
+1. Create project at [supabase.com](https://supabase.com)
+2. Run this SQL in SQL Editor:
 
-### 6. Set Up MongoDB Atlas
+```sql
+-- Profiles table (extends auth.users)
+CREATE TABLE profiles (
+  id UUID REFERENCES auth.users PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  role TEXT NOT NULL DEFAULT 'farmer',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-1. Create a cluster at https://cloud.mongodb.com
-2. Create a database user
-3. Whitelist your IP address (or use 0.0.0.0/0 for development)
-4. Get the connection string and add it to backend `.env`
+-- Farms table
+CREATE TABLE farms (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users NOT NULL,
+  farm_name TEXT NOT NULL,
+  owner_name TEXT,
+  phone TEXT,
+  district TEXT,
+  location GEOGRAPHY(POINT, 4326),
+  farm_type TEXT DEFAULT 'Broiler',
+  aadhaar_number TEXT,
+  pan_card TEXT,
+  license_status TEXT DEFAULT 'Pending',
+  poultry_farm_id TEXT UNIQUE,
+  current_status TEXT DEFAULT 'safe',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-### 7. Set Up HiveMQ Cloud
+-- Auto-create profile on signup
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, role)
+  VALUES (NEW.id, NEW.email, COALESCE(NEW.raw_user_meta_data->>'role', 'farmer'));
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-1. Sign up at https://www.hivemq.com/mqtt-cloud-broker/
-2. Create a cluster
-3. Note the broker URL, username, and password
-4. Add credentials to backend `.env`
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
-### 8. Run the Application
+-- Enable Row Level Security
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE farms ENABLE ROW LEVEL SECURITY;
 
-#### Start Backend (Terminal 1)
-```bash
-cd backend
-npm start
+-- RLS Policies
+CREATE POLICY "Users can read own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can read own farm" ON farms FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Admins can read all" ON farms FOR SELECT USING (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+);
 ```
 
-#### Start Frontend (Terminal 2)
+3. Get API keys from Project Settings → API
+
+### 4. Run Application
+
 ```bash
+# Terminal 1: Backend
+cd backend && npm run dev
+
+# Terminal 2: Frontend
 npm run dev
 ```
 
-The application will be available at:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
+Access at:
+- Frontend: http://localhost:3000
+- Backend: http://localhost:5000
 
-## 📱 ESP32 Setup
+## 📱 ESP32 Sensor Setup
 
-### MQTT Topic Structure
-```
-poultry/sensors/<DEVICE_ID>
-```
-
-### Example Payload
+### MQTT Payload Format
 ```json
 {
+  "farmId": "your_farm_id",
+  "zone": "A",
   "ammonia": 30.5,
   "co2": 4200,
   "temperature": 24.5,
@@ -224,140 +203,72 @@ poultry/sensors/<DEVICE_ID>
 }
 ```
 
-### Sample ESP32 Code
-```cpp
-#include <WiFi.h>
-#include <PubSubClient.h>
+### Disease Detection Thresholds
 
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
-const char* mqtt_server = "your-hivemq-broker.com";
-const int mqtt_port = 1883;
-const char* mqtt_user = "your_username";
-const char* mqtt_password = "your_password";
+| Parameter | Safe | Warning | Critical |
+|-----------|------|---------|----------|
+| Ammonia | ≤25 ppm | 25-40 ppm | >40 ppm |
+| CO₂ | ≤3000 ppm | 3000-5000 ppm | >5000 ppm |
+| Temperature | 18-27°C | 15-30°C | <15°C or >30°C |
+| TDS | ≤500 ppm | 500-800 ppm | >800 ppm |
+| Humidity | 50-70% | 40-80% | <40% or >80% |
 
-WiFiClient espClient;
-PubSubClient client(espClient);
+## � Project Structure
 
-void setup() {
-  Serial.begin(115200);
-  WiFi.begin(ssid, password);
-  client.setServer(mqtt_server, mqtt_port);
-}
-
-void loop() {
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
-  
-  // Read sensors
-  float ammonia = readAmmoniaSensor();
-  float co2 = readCO2Sensor();
-  float temperature = readTemperatureSensor();
-  float tds = readTDSSensor();
-  float humidity = readHumiditySensor();
-  
-  // Create JSON payload
-  String payload = "{\"ammonia\":" + String(ammonia) + 
-                   ",\"co2\":" + String(co2) + 
-                   ",\"temperature\":" + String(temperature) + 
-                   ",\"tds\":" + String(tds) + 
-                   ",\"humidity\":" + String(humidity) + "}";
-  
-  // Publish to MQTT
-  client.publish("poultry/sensors/ESP32_001", payload.c_str());
-  
-  delay(60000); // Send data every minute
-}
 ```
-
-## 🎯 Disease Detection Thresholds
-
-| Sensor | Safe | Moderate | Danger |
-|--------|------|----------|---------|
-| Ammonia | ≤ 25 ppm | 25-40 ppm | > 40 ppm |
-| CO₂ | ≤ 3000 ppm | 3000-5000 ppm | > 5000 ppm |
-| Temperature | 18-27°C | 15-18°C or 27-32°C | < 15°C or > 32°C |
-| TDS | ≤ 500 ppm | 500-800 ppm | > 800 ppm |
-| Humidity | 50-70% | 40-50% or 70-80% | < 40% or > 80% |
+poultry/
+├── app/                    # Next.js pages
+│   ├── auth/login/        # Authentication
+│   ├── farmer/dashboard/  # Farmer interface
+│   └── admin/dashboard/   # Admin interface
+├── components/            # React components
+├── lib/                   # Utilities
+│   ├── supabase.ts       # Supabase client
+│   ├── store.ts          # State management
+│   └── utils.ts          # Helper functions
+├── backend/              # Express server
+│   ├── config/          # Supabase config
+│   ├── models/          # MongoDB models
+│   ├── routes/          # API endpoints
+│   ├── services/        # MQTT & background jobs
+│   └── middleware/      # Authentication
+└── esp32/               # ESP32 firmware
+```
 
 ## 🚀 Deployment
 
 ### Frontend (Vercel)
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-
-# Set environment variables in Vercel dashboard
+vercel --prod
 ```
 
-### Backend (Render)
-1. Create a new Web Service on Render
-2. Connect your GitHub repository
-3. Set build command: `cd backend && npm install`
-4. Set start command: `cd backend && npm start`
-5. Add all environment variables
+### Backend (Railway)
+1. Push to GitHub
+2. Connect Railway to repository
+3. Add environment variables
+4. Deploy
 
-### Backend (Google Cloud Run)
-```bash
-# Build Docker image
-docker build -t poultry-backend ./backend
+## 📖 Documentation
 
-# Push to Google Container Registry
-docker tag poultry-backend gcr.io/YOUR_PROJECT/poultry-backend
-docker push gcr.io/YOUR_PROJECT/poultry-backend
-
-# Deploy to Cloud Run
-gcloud run deploy poultry-backend \
-  --image gcr.io/YOUR_PROJECT/poultry-backend \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated
-```
-
-## 📊 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/verify` - Verify user token
-
-### Farms
-- `GET /api/farms` - Get all farms (admin)
-- `GET /api/farms/:id` - Get farm by ID
-- `GET /api/farms/user/:userId` - Get farm by user ID
-- `POST /api/farms/nearby` - Get nearby farms
-
-### Sensors
-- `GET /api/sensors/farm/:farmId/latest` - Get latest sensor data
-- `GET /api/sensors/farm/:farmId/history` - Get historical data
-- `GET /api/sensors/farm/:farmId/stats` - Get statistics
-
-### Alerts
-- `GET /api/alerts/farm/:farmId` - Get farm alerts
-- `GET /api/alerts` - Get all alerts (admin)
-- `PATCH /api/alerts/:id/read` - Mark alert as read
-- `PATCH /api/alerts/:id/resolve` - Resolve alert
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for detailed development history and technical decisions.
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
 
 ## 📝 License
 
-This project is licensed under the MIT License.
+MIT License - See LICENSE file
 
-## 👥 Team
+## 👥 Support
 
-Built with ❤️ for poultry farmers in West Bengal.
+- **Issues**: [GitHub Issues](https://github.com/suvab4gh/poultry-iot-monitoring/issues)
+- **Email**: support@poultry-monitoring.com
 
-## 📞 Support
+---
 
-For support, email support@poultry-monitoring.com or open an issue in the repository.
+Built with ❤️ for poultry farmers in West Bengal

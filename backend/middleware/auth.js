@@ -1,60 +1,37 @@
-import admin from 'firebase-admin';
+import { supabase } from '../config/supabase.js';
 
-// Initialize Firebase Admin SDK
-let firebaseInitialized = false;
-
-try {
-  // Check if Firebase credentials are properly configured
-  if (
-    process.env.FIREBASE_PROJECT_ID && 
-    process.env.FIREBASE_CLIENT_EMAIL && 
-    process.env.FIREBASE_PRIVATE_KEY &&
-    process.env.FIREBASE_PROJECT_ID !== 'your_project_id'
-  ) {
-    const serviceAccount = {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    };
-
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-
-    firebaseInitialized = true;
-    console.log('✅ Firebase Admin SDK initialized successfully');
-  } else {
-    console.warn('⚠️  Firebase credentials not configured. Authentication will be disabled.');
-    console.warn('   Update FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in backend/.env');
-  }
-} catch (error) {
-  console.error('❌ Firebase Admin SDK initialization failed:', error.message);
-  console.warn('   Authentication will be disabled. Please check your Firebase credentials.');
-}
-
-// Middleware to verify Firebase ID token
+// Middleware to verify Supabase JWT token
 async function verifyToken(req, res, next) {
-  // If Firebase is not initialized, skip authentication in development
-  if (!firebaseInitialized) {
-    console.warn('⚠️  Authentication bypassed - Firebase not configured');
-    req.user = { uid: 'dev-user', email: 'dev@example.com' }; // Mock user for development
-    return next();
-  }
-
   try {
-    const idToken = req.headers.authorization?.split('Bearer ')[1];
+    const authHeader = req.headers.authorization;
     
-    if (!idToken) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'No token provided' });
     }
 
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.user = decodedToken;
+    const token = authHeader.split('Bearer ')[1];
+
+    // Verify the JWT token with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      console.error('Token verification error:', error);
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    // Attach user info to request
+    req.user = {
+      uid: user.id,
+      email: user.email,
+      role: user.user_metadata?.role || 'farmer',
+    };
+
     next();
   } catch (error) {
-    console.error('Token verification error:', error);
-    return res.status(401).json({ error: 'Invalid token' });
+    console.error('Authentication error:', error);
+    return res.status(401).json({ error: 'Authentication failed' });
   }
 }
 
-export { admin, verifyToken };
+export { verifyToken };
+

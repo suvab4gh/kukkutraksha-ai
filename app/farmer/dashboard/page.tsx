@@ -523,7 +523,16 @@ export default function FarmerDashboard() {
           </div>
         )}
 
-        {/* Sensor Cards */}
+        {/* PRIORITY 1: SENSOR DATA FROM HIVEMQ - REAL-TIME METRICS WITH GRADIENT */}
+        
+        {/* Sensor Health Dashboard Section - iPhone Style */}
+        <div className="mb-8">
+          <SensorHealthPanel
+            sensors={sensorHealthData}
+          />
+        </div>
+
+        {/* Sensor Cards with Gradient Indicators */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {currentData && (
             <>
@@ -566,6 +575,15 @@ export default function FarmerDashboard() {
           )}
         </div>
 
+        {/* Sensor Health Monitoring Section */}
+        <div className="mb-8">
+          <SensorHealthMonitor
+            sensors={sensors}
+            onUpdateSensor={handleUpdateSensor}
+            onAddNote={handleAddSensorNote}
+          />
+        </div>
+
         {/* Disease Spread Heatmap */}
         {farm && (
           <div className="mb-8">
@@ -577,13 +595,16 @@ export default function FarmerDashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Sensor Trends - Individual Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Sensor Trends - Individual Cards with Gradient Graphs */}
           <div className="lg:col-span-2 space-y-6">
             <div>
               <div className="flex items-center gap-2 mb-6">
                 <TrendingUp className="w-6 h-6 text-green-600" />
-                <h2 className="text-2xl font-bold text-gray-900">Sensor Trends (24 Hours)</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Live Sensor Trends (24 Hours)</h2>
+                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                  HiveMQ Connected
+                </span>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -678,17 +699,6 @@ export default function FarmerDashboard() {
                 )}
               </div>
             </div>
-
-            {/* Map */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-green-600" />
-                <h2 className="text-xl font-bold text-gray-900">Farm Location & Nearby Farms</h2>
-              </div>
-              <div className="h-96">
-                {farm && <FarmMap farm={farm} nearbyFarms={nearbyFarms} />}
-              </div>
-            </div>
           </div>
 
           {/* Right Sidebar - Farmer Bio & Alerts */}
@@ -723,20 +733,16 @@ export default function FarmerDashboard() {
           </div>
         </div>
 
-        {/* Sensor Health Monitoring Section */}
-        <div className="mt-8">
-          <SensorHealthMonitor
-            sensors={sensors}
-            onUpdateSensor={handleUpdateSensor}
-            onAddNote={handleAddSensorNote}
-          />
-        </div>
-
-        {/* Sensor Health Dashboard Section */}
-        <div className="mt-8">
-          <SensorHealthPanel
-            sensors={sensorHealthData}
-          />
+        {/* MOVED TO BOTTOM: Nearby Farms & Location Map */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <MapPin className="w-5 h-5 text-green-600" />
+            <h2 className="text-xl font-bold text-gray-900">Farm Location & Nearby Farms</h2>
+            <span className="ml-auto text-sm text-gray-600">{nearbyFarms.length} farms within 10km</span>
+          </div>
+          <div className="h-96">
+            {farm && <FarmMap farm={farm} nearbyFarms={nearbyFarms} />}
+          </div>
         </div>
       </main>
     </div>
