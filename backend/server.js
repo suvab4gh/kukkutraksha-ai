@@ -1,5 +1,4 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { WebSocketServer } from 'ws';
@@ -22,19 +21,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// MongoDB Connection
-if (process.env.MONGODB_URI && process.env.MONGODB_URI !== 'mongodb+srv://username:password@cluster.mongodb.net/poultry-monitoring?retryWrites=true&w=majority') {
-  mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-    .then(() => console.log('✅ MongoDB Connected Successfully'))
-    .catch((err) => console.error('❌ MongoDB Connection Error:', err));
-} else {
-  console.warn('⚠️  MongoDB URI not configured. Database operations will fail.');
-  console.warn('   Update MONGODB_URI in backend/.env with your MongoDB Atlas connection string');
-}
 
 // Store active WebSocket clients
 const clients = new Set();

@@ -1,66 +1,84 @@
 import express from 'express';
 const router = express.Router();
-import Farm from '../models/Farm.js';
-import Admin from '../models/Admin.js';
+import { supabase } from '../config/supabase.js';
 import { verifyToken } from '../middleware/auth.js';
 
 // Register new user (farmer or admin)
 router.post('/register', async (req, res) => {
   try {
-    const { uid, email, realId, farmName, address, district, location, userType, idToken } = req.body;
+    const { uid, email, realId, farmName, address, district, location, userType } = req.body;
+
+    console.log('📝 Registration request:', { uid, email, userType, farmName });
 
     if (userType === 'farmer') {
-      // Check if real ID already exists
-      const existingFarm = await Farm.findOne({ realId });
-      if (existingFarm) {
-        return res.status(400).json({ error: 'Real ID already registered' });
+      // Check if farm with this poultry_farm_id already exists
+      if (realId) {
+        const { data: existingFarm } = await supabase
+          .from('farms')
+          .select('id')
+          .eq('poultry_farm_id', realId)
+          .single();
+
+        if (existingFarm) {
+          return res.status(400).json({ error: 'Real ID already registered' });
+        }
       }
 
-      // Create new farm
-      const farm = new Farm({
-        userId: uid,
-        email,
-        realId,
-        farmName,
-        address,
-        district,
-        location,
-      });
+      // Create farm in Supabase
+      const { data: farm, error: farmError } = await supabase
+        .from('farms')
+        .insert({
+          user_id: uid,
+          farm_name: farmName,
+          owner_name: farmName, // Can be updated later
+          district: district,
+          poultry_farm_id: realId,
+          farm_type: 'Broiler',
+          current_status: 'safe',
+        })
+        .select()
+        .single();
 
-      await farm.save();
+      if (farmError) {
+        console.error('❌ Supabase farm creation error:', farmError);
+        throw farmError;
+      }
+
+      console.log('✅ Farm created:', farm.id);
 
       res.status(201).json({
         message: 'Farmer registered successfully',
-        farmId: farm._id,
+        farmId: farm.id,
         name: farmName,
       });
     } else if (userType === 'admin') {
-      // Check if admin already exists
-      const existingAdmin = await Admin.findOne({ email });
-      if (existingAdmin) {
-        return res.status(400).json({ error: 'Admin already registered' });
+      // Update profile role to admin
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ role: 'admin' })
+        .eq('id', uid);
+
+      if (profileError) {
+        console.error('❌ Supabase profile update error:', profileError);
+        throw profileError;
       }
 
-      // Create new admin
-      const admin = new Admin({
-        userId: uid,
-        email,
-        name: req.body.name || 'Admin',
-      });
-
-      await admin.save();
+      console.log('✅ Admin profile updated');
 
       res.status(201).json({
         message: 'Admin registered successfully',
-        adminId: admin._id,
-        name: admin.name,
+        adminId: uid,
+        name: req.body.name || 'Admin',
       });
     } else {
       res.status(400).json({ error: 'Invalid user type' });
     }
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    console.error('❌ Registration error:', error);
+    res.status(500).json({ 
+      error: 'Registration failed',
+      details: error.message 
+    });
   }
 });
 
@@ -70,40 +88,63 @@ router.post('/verify', verifyToken, async (req, res) => {
     const { userType } = req.body;
     const uid = req.user.uid;
 
+    console.log('🔍 Verifying user:', { uid, userType });
+
     if (userType === 'farmer') {
-      const farm = await Farm.findOne({ userId: uid });
+      const { data: farm, error } = await supabase
+        .from('farms')
+        .select('*')
+        .eq('user_id', uid)
+        .single();
       
-      if (!farm) {
+      if (error || !farm) {
+        console.error('❌ Farm not found:', error);
         return res.status(404).json({ error: 'Farm not found' });
       }
 
+      console.log('✅ Farm verified:', farm.id);
+
       res.json({
-        farmId: farm._id,
-        name: farm.farmName,
-        email: farm.email,
-        location: farm.location,
+        farmId: farm.id,
+        name: farm.farm_name,
+        email: req.user.email,
         district: farm.district,
+        farmType: farm.farm_type,
+        status: farm.current_status,
       });
     } else if (userType === 'admin') {
-      const admin = await Admin.findOne({ userId: uid });
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', uid)
+        .single();
       
-      if (!admin) {
+      if (error || !profile) {
+        console.error('❌ Admin profile not found:', error);
         return res.status(404).json({ error: 'Admin not found' });
       }
 
+      if (profile.role !== 'admin') {
+        return res.status(403).json({ error: 'User is not an admin' });
+      }
+
+      console.log('✅ Admin verified:', uid);
+
       res.json({
-        adminId: admin._id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role,
-        permissions: admin.permissions,
+        adminId: uid,
+        name: req.user.email.split('@')[0],
+        email: req.user.email,
+        role: profile.role,
       });
     } else {
       res.status(400).json({ error: 'Invalid user type' });
     }
   } catch (error) {
-    console.error('Verification error:', error);
-    res.status(500).json({ error: 'Verification failed' });
+    console.error('❌ Verification error:', error);
+    res.status(500).json({ 
+      error: 'Verification failed',
+      details: error.message 
+    });
   }
 });
 

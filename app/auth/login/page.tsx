@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [district, setDistrict] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
+  const [language, setLanguage] = useState('en'); // Language preference
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -77,6 +78,12 @@ export default function LoginPage() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              role: userType,
+              language: language,
+            }
+          }
         });
 
         if (error) throw error;
@@ -186,6 +193,23 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
+
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Preferred Language / পছন্দের ভাষা *
+              </label>
+              <select
+                required
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
+              >
+                <option value="en">English</option>
+                <option value="bn">বাংলা (Bengali)</option>
+              </select>
+            </div>
+          )}
 
           {!isLogin && userType === 'farmer' && (
             <>
