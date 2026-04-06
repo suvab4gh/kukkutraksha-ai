@@ -3,28 +3,8 @@
   "version": 2,
   "framework": "nextjs",
 
-  "experimentalServices": {
-    "frontend": {
-      "routePrefix": "/",
-      "framework": "nextjs"
-    },
-    "backend": {
-      "entrypoint": "backend",
-      "routePrefix": "/_/backend"
-    }
-  },
-
-  "buildCommand": "cd frontend && npm install && npm run build && cd ../backend && npm install",
+  "buildCommand": "npm install && npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "echo 'Skipping root install'",
-  "outputDirectory": "frontend/.next",
-
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
-    "NEXT_PUBLIC_MQTT_HOST": "@mqtt_host",
-    "NEXT_PUBLIC_MQTT_PORT": "@mqtt_port",
-    "NEXT_PUBLIC_MQTT_USERNAME": "@mqtt_username",
-    "NEXT_PUBLIC_MQTT_PASSWORD": "@mqtt_password"
-  }
+  "installCommand": "npm install",
+  "outputDirectory": ".next"
 }
