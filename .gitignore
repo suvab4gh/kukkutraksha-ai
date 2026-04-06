@@ -71,3 +71,5 @@ tmp/
 *.tar.xz
 *.tar.zst
 ```
+.vercel
+.env*.local
