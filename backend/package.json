@@ -1,0 +1,27 @@
+{
+  "name": "poultry-backend",
+  "version": "2.0.0",
+  "description": "Backend API for Poultry Disease Monitoring System",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.101.1",
+    "axios": "^1.14.0",
+    "cors": "^2.8.5",
+    "cron": "^3.1.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.1",
+    "mqtt": "^5.15.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
