@@ -1,4 +1,3 @@
-```
 # Environment variables
 .env
 .env.local
@@ -18,9 +17,11 @@ node_modules/
 *.tmp
 
 # Build artifacts
+.next/
 dist/
 build/
 target/
+tsconfig.tsbuildinfo
 
 # Python specific
 __pycache__/
@@ -70,6 +71,6 @@ tmp/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-```
+
 .vercel
 .env*.local
