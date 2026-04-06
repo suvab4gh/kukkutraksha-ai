@@ -1,3 +1,8 @@
+// DEPRECATED: This file was for MongoDB seeding
+// The project now uses Supabase PostgreSQL
+// For test data, use Supabase SQL Editor or create a new seeding script
+// that uses the Supabase client
+
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Farm from './models/Farm.js';

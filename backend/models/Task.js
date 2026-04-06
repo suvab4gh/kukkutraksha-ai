@@ -1,46 +1,10 @@
-import mongoose from 'mongoose';
+// Task model - using Supabase for storage
+// Tasks are stored in Supabase PostgreSQL database
+// Use Supabase client from '../config/supabase.js' in route handlers
 
-const taskSchema = new mongoose.Schema({
-  farmId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Farm',
-    required: true,
-  },
-  title: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-  },
-  assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'in_progress', 'completed', 'cancelled'],
-    default: 'pending',
-  },
-  priority: {
-    type: String,
-    enum: ['low', 'medium', 'high', 'urgent'],
-    default: 'medium',
-  },
-  dueDate: {
-    type: Date,
-  },
-  completedAt: {
-    type: Date,
-  },
-  category: {
-    type: String,
-    enum: ['feeding', 'cleaning', 'health_check', 'maintenance', 'vaccination', 'other'],
-  },
-}, {
-  timestamps: true,
-});
-
-const Task = mongoose.model('Task', taskSchema);
+const Task = {
+  // Placeholder model - implement using Supabase in route handlers
+  // Example: const { data, error } = await supabase.from('tasks').select('*')
+};
 
 export default Task;

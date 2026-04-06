@@ -218,17 +218,11 @@ curl http://localhost:5000/api/predictions?lat=22.5726&lng=88.3639
 ```
 **Solution**: Add MQTT username/password from HiveMQ Console to `.env` files
 
-### Supabase Connection Failed
+### Backend Connection Issues
 ```
-❌ Supabase not properly configured
+❌ Error connecting to backend API
 ```
-**Solution**: Verify SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in `backend/.env`
-
-### Firebase Warning
-```
-⚠️ Firebase not configured properly
-```
-**Note**: Firebase is optional. Supabase is now the primary database. Ignore this warning or remove Firebase dependencies if not needed.
+**Solution**: Verify backend is running and API_URL is set correctly in `.env.local`
 
 ---
 

@@ -26,8 +26,7 @@ A full-stack IoT-based web application for real-time poultry disease monitoring,
 
 ### Backend
 - Node.js 25 + Express
-- MongoDB Atlas (Sensor Time-series Data)
-- Supabase PostgreSQL (User/Farm Data)
+- Supabase PostgreSQL (Primary Database)
 - HiveMQ (MQTT Broker)
 - WebSocket (Real-time Updates)
 - **Open-Meteo API** (Free weather forecasts for disease prediction)
@@ -53,15 +52,17 @@ poultry/
 │   ├── SensorChart.tsx
 │   └── AlertsPanel.tsx
 ├── lib/                          # Utilities and configurations
-│   ├── firebase.ts              # Firebase config
+│   ├── supabase.ts              # Supabase config
 │   ├── store.ts                 # Zustand stores
 │   └── utils.ts                 # Utility functions
 ├── backend/                      # Express backend
-│   ├── models/                  # Mongoose models
+│   ├── config/                  # Configuration files
+│   │   └── supabase.js
+│   ├── models/                  # Data models (placeholders)
 │   │   ├── Farm.js
 │   │   ├── SensorData.js
 │   │   ├── Alert.js
-│   │   └── Admin.js
+│   │   └── User.js
 │   ├── routes/                  # API routes
 │   │   ├── auth.js
 │   │   ├── farms.js
@@ -85,7 +86,6 @@ poultry/
 ### Prerequisites
 - Node.js 25+
 - Supabase Account
-- MongoDB Atlas Account
 - HiveMQ Cloud Account
 
 ### 1. Clone & Install
@@ -103,12 +103,14 @@ cd backend && npm install && cd ..
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 NEXT_PUBLIC_API_URL=http://localhost:5000
-NEXT_PUBLIC_MQTT_BROKER_URL=wss://your-hivemq-broker.com:8884/mqtt
+NEXT_PUBLIC_MQTT_HOST=your_mqtt_host
+NEXT_PUBLIC_MQTT_PORT=8884
+NEXT_PUBLIC_MQTT_USERNAME=your_mqtt_username
+NEXT_PUBLIC_MQTT_PASSWORD=your_mqtt_password
 ```
 
 **Backend (backend/.env)**
 ```env
-MONGODB_URI=your_mongodb_connection_string
 PORT=5000
 NODE_ENV=development
 SUPABASE_URL=your_supabase_url
@@ -234,7 +236,7 @@ poultry/
 │   └── utils.ts          # Helper functions
 ├── backend/              # Express server
 │   ├── config/          # Supabase config
-│   ├── models/          # MongoDB models
+│   ├── models/          # Data models (placeholders)
 │   ├── routes/          # API endpoints
 │   ├── services/        # MQTT & background jobs
 │   └── middleware/      # Authentication

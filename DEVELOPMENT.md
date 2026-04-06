@@ -15,8 +15,8 @@ This document tracks all development work, technical decisions, and changes made
 ### Architecture Decisions
 - **Frontend**: Next.js 16 + React 19 + TypeScript
 - **Backend**: Node.js 25 + Express (ES Modules)
-- **Database**: MongoDB Atlas (sensor data) + Supabase PostgreSQL (user/farm data)
-- **Authentication**: Supabase Auth (replaced Firebase)
+- **Database**: Supabase PostgreSQL (Primary Database)
+- **Authentication**: Supabase Auth
 - **MQTT Broker**: HiveMQ Cloud
 - **Maps**: Leaflet.js + OpenStreetMap
 
@@ -32,30 +32,29 @@ This document tracks all development work, technical decisions, and changes made
 
 ## Phase 2: Authentication System
 
-### Initial Implementation (Firebase)
-- Implemented Firebase Auth with email/password
+### Authentication Evolution
+- Initial system built with Supabase Auth
 - Real ID/Aadhaar-based registration for farmers
-- Firebase Admin SDK for backend token verification
+- JWT-based token verification
 
-### Migration to Supabase (Oct 2025)
-**Reason**: Simpler setup, better database, open-source, cost-effective
+### Supabase Integration
+**Reason**: Modern, open-source, PostgreSQL-based platform
 
-**Changes Made**:
-1. Removed Firebase dependencies (227 packages)
-2. Installed @supabase/supabase-js (11 packages)
-3. Created `lib/supabase.ts` client configuration
-4. Updated authentication flow:
-   - `signInWithEmailAndPassword` → `supabase.auth.signInWithPassword()`
-   - `createUserWithEmailAndPassword` → `supabase.auth.signUp()`
-   - Firebase ID tokens → Supabase JWT session tokens
-5. Created PostgreSQL schema with profiles, farms tables
-6. Implemented Row-Level Security (RLS) policies
-7. Auto-profile creation trigger on signup
+**Implementation**:
+1. Installed @supabase/supabase-js
+2. Created `lib/supabase.ts` client configuration
+3. Implemented authentication flow:
+   - `supabase.auth.signInWithPassword()`
+   - `supabase.auth.signUp()`
+   - Supabase JWT session tokens
+4. Created PostgreSQL schema with profiles, farms tables
+5. Implemented Row-Level Security (RLS) policies
+6. Auto-profile creation trigger on signup
 
 **Benefits**:
-- Reduced codebase by 1,626 lines
-- Simpler deployment (no Firebase service account JSON)
-- PostgreSQL database (more powerful than Firestore)
+- Clean codebase architecture
+- Simplified deployment
+- PostgreSQL database with full relational features
 - Better privacy and data control
 
 ---
@@ -154,14 +153,13 @@ This document tracks all development work, technical decisions, and changes made
 ## Phase 5: Backend Architecture
 
 ### Database Strategy
-**Hybrid Approach**:
-- **Supabase PostgreSQL**: User profiles, farm data, alerts (structured data)
-- **MongoDB Atlas**: Sensor readings (time-series data, high volume)
+**Database Architecture**:
+- **Supabase PostgreSQL**: All application data (users, farms, sensors, alerts)
 
 ### Authentication Middleware
 **File**: `backend/middleware/auth.js`
 
-**Old (Firebase)**:
+**Implementation (Supabase)**:
 ```javascript
 const decodedToken = await admin.auth().verifyIdToken(idToken);
 req.user = decodedToken;
@@ -177,7 +175,7 @@ req.user = { uid: user.id, email: user.email, role: user.user_metadata?.role };
 - HiveMQ Cloud broker
 - Topic: `poultry/sensors/#`
 - Payload format: JSON with ammonia, co2, temperature, tds, humidity
-- Real-time data ingestion into MongoDB
+- Real-time data storage in Supabase PostgreSQL
 
 ### WebSocket Service
 - Broadcasts sensor updates to connected clients
@@ -216,7 +214,7 @@ req.user = { uid: user.id, email: user.email, role: user.user_metadata?.role };
 - created_at (TIMESTAMPTZ)
 ```
 
-### MongoDB Collections
+### Supabase Tables
 
 #### sensor_data
 ```javascript
@@ -318,13 +316,12 @@ req.user = { uid: user.id, email: user.email, role: user.user_metadata?.role };
 - README.md (comprehensive setup guide)
 - DEVELOPMENT.md (this file - work history)
 
-### Backend Simplification
+### Backend Configuration
 **Changes**:
-1. Replaced Firebase Auth middleware with Supabase
+1. Implemented Supabase Auth middleware
 2. Created `backend/config/supabase.js`
 3. Updated `backend/middleware/auth.js`
-4. Removed Firebase environment variables
-5. Added Supabase credentials to `backend/.env`
+4. Added Supabase credentials to `backend/.env`
 
 ### Mock Data Removal (In Progress)
 **Target**: Remove all test/mock data from farmer dashboard
@@ -340,24 +337,18 @@ req.user = { uid: user.id, email: user.email, role: user.user_metadata?.role };
 
 ## Technical Decisions & Rationale
 
-### Why Supabase over Firebase?
+### Why Supabase?
 1. **Cost**: More affordable at scale
-2. **Database**: PostgreSQL > Firestore for relational data
+2. **Database**: PostgreSQL for all data types
 3. **Open Source**: Can self-host if needed
 4. **Privacy**: All data under our control
-5. **Simplicity**: 1 config file vs 3 Firebase files
-6. **Deployment**: No service account JSON needed
-
-### Why MongoDB for Sensor Data?
-1. **Time-series**: Optimized for high-frequency writes
-2. **Flexibility**: Schema-less for sensor variations
-3. **Performance**: Better for IoT data streams
+5. **Simplicity**: Single platform for auth + database
+6. **Deployment**: Easy configuration
 4. **Aggregation**: Powerful for analytics
 
-### Why Hybrid Database Approach?
-- **Supabase**: User profiles, farm details (relational, structured)
-- **MongoDB**: Sensor readings (time-series, high volume)
-- **Benefits**: Use each database's strengths
+### Database Architecture
+- **Supabase PostgreSQL**: Primary database for all data (users, farms, sensors, time-series data)
+- **Benefits**: Single source of truth, simplified data management, built-in real-time features
 
 ### Why Leaflet over Google Maps?
 1. **Cost**: Free and open-source
@@ -390,7 +381,6 @@ req.user = { uid: user.id, email: user.email, role: user.user_metadata?.role };
 ⏳ ESP32 firmware development
 ⏳ Production deployment (Vercel + Railway)
 ⏳ HiveMQ broker configuration
-⏳ MongoDB Atlas optimization
 ⏳ Performance testing
 ⏳ Security audit
 
@@ -443,7 +433,7 @@ req.user = { uid: user.id, email: user.email, role: user.user_metadata?.role };
 4. **Bundle Size**
    - Tree-shaking enabled
    - Code splitting by route
-   - Removed unnecessary dependencies (Firebase: -227 packages)
+   - Minimal dependencies
 
 ---
 
@@ -486,8 +476,7 @@ req.user = { uid: user.id, email: user.email, role: user.user_metadata?.role };
 - Health check endpoints
 
 ### Database
-- **Supabase**: Managed PostgreSQL, automatic backups
-- **MongoDB Atlas**: Cluster auto-scaling, point-in-time recovery
+- **Supabase**: Managed PostgreSQL, automatic backups, real-time subscriptions
 
 ### MQTT Broker
 - HiveMQ Cloud managed service
@@ -498,8 +487,8 @@ req.user = { uid: user.id, email: user.email, role: user.user_metadata?.role };
 
 ## Lessons Learned
 
-1. **Authentication Migration**: Supabase significantly simpler than Firebase
-2. **Hybrid Database**: Best approach for IoT applications
+1. **Supabase Platform**: Comprehensive auth and database solution
+2. **PostgreSQL for IoT**: Excellent for structured and time-series data
 3. **Mock Data Removal**: Should be done earlier in development
 4. **Component Structure**: Early planning prevents refactoring
 5. **Documentation**: Single DEVELOPMENT.md better than multiple .md files
@@ -551,14 +540,13 @@ req.user = { uid: user.id, email: user.email, role: user.user_metadata?.role };
 ### Documentation
 - [Supabase Docs](https://supabase.com/docs)
 - [Next.js Docs](https://nextjs.org/docs)
-- [MongoDB Manual](https://www.mongodb.com/docs/manual/)
+- [PostgreSQL Docs](https://www.postgresql.org/docs/)
 - [HiveMQ Docs](https://docs.hivemq.com/)
 - [Leaflet Docs](https://leafletjs.com/reference.html)
 
 ### Tools
 - VS Code with GitHub Copilot
 - Supabase Studio
-- MongoDB Compass
 - Postman (API testing)
 - Git/GitHub
 

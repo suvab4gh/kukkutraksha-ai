@@ -100,9 +100,6 @@ app.use((err, req, res, next) => {
 // Initialize Supabase Connection (Primary Database - PostgreSQL)
 import { supabase } from './config/supabase.js';
 
-// Initialize Firebase Connection (Optional - for FCM notifications)
-import { db, auth } from './config/firebase.js';
-
 // Initialize MQTT Client
 import mqttClient from './services/mqttService.js';
 mqttClient.connect();
