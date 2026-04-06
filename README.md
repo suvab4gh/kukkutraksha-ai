@@ -1,15 +1,19 @@
-# 🐔 Poultry Disease Monitoring System
+# 🐔 KukkutRaksha AI - Poultry Disease Monitoring & Prediction System
 
-A full-stack IoT-based web application for real-time poultry disease monitoring using ESP32 sensors, MQTT, and machine learning algorithms.
+A full-stack IoT-based web application for real-time poultry disease monitoring, environmental sensing, and **10-day AI-powered disease risk prediction** using ESP32 sensors, MQTT, open-source weather APIs, and machine learning algorithms.
 
 ## 🌟 Features
 
 - **Real-time Sensor Monitoring**: Ammonia, CO₂, Temperature, TDS, Humidity
+- **🔮 10-Day Disease Risk Prediction**: AI-powered forecasts using Open-Meteo weather API
+  - Color-coded alerts: 🟢 Green (Safe), 🟡 Yellow (Warning), 🟠 Orange (High Risk), 🔴 Red (Critical)
+  - Predicts Newcastle, Avian Influenza, Bronchitis, Coccidiosis, Heat Stress, and Respiratory issues
 - **Disease Detection**: Automated algorithms with color-coded risk indicators
 - **Interactive Maps**: OpenStreetMap integration for farm locations
 - **Admin Dashboard**: District-level monitoring for West Bengal farms
 - **Emergency Alerts**: Direct communication system for critical situations
 - **Health Analytics**: iPhone-style sensor health monitoring
+- **IoT Automation**: Smart device control based on sensor thresholds
 
 ## 🛠️ Tech Stack
 
@@ -26,6 +30,8 @@ A full-stack IoT-based web application for real-time poultry disease monitoring 
 - Supabase PostgreSQL (User/Farm Data)
 - HiveMQ (MQTT Broker)
 - WebSocket (Real-time Updates)
+- **Open-Meteo API** (Free weather forecasts for disease prediction)
+- **Axios** (HTTP client for API requests)
 
 ## 📁 Project Structure
 

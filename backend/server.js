@@ -62,6 +62,7 @@ import userRoutes from './routes/users.js';
 import taskRoutes from './routes/tasks.js';
 import incidentRoutes from './routes/incidents.js';
 import controlRoutes from './routes/control.js';
+import predictionRoutes from './routes/predictions.js';
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -72,6 +73,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/control', controlRoutes);
+app.use('/api/predictions', predictionRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -95,6 +97,12 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Initialize Supabase Connection (Primary Database - PostgreSQL)
+import { supabase } from './config/supabase.js';
+
+// Initialize Firebase Connection (Optional - for FCM notifications)
+import { db, auth } from './config/firebase.js';
+
 // Initialize MQTT Client
 import mqttClient from './services/mqttService.js';
 mqttClient.connect();
@@ -107,6 +115,9 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 WebSocket server ready`);
+  console.log(`🔮 Disease Prediction Service enabled (Open-Meteo API)`);
+  console.log(`💾 Database: Supabase (PostgreSQL)`);
+  console.log(`🔐 Authentication: Supabase Auth`);
 });
 
 export { app, wss };
