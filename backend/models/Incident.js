@@ -1,58 +1,10 @@
-import mongoose from 'mongoose';
+// Incident model - using Supabase for storage
+// Incidents are stored in Supabase PostgreSQL database
+// Use Supabase client from '../config/supabase.js' in route handlers
 
-const incidentSchema = new mongoose.Schema({
-  farmId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Farm',
-    required: true,
-  },
-  title: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-  type: {
-    type: String,
-    enum: ['disease_outbreak', 'equipment_failure', 'environmental', 'predator_attack', 'other'],
-    required: true,
-  },
-  severity: {
-    type: String,
-    enum: ['low', 'medium', 'high', 'critical'],
-    default: 'medium',
-  },
-  status: {
-    type: String,
-    enum: ['reported', 'investigating', 'resolved', 'closed'],
-    default: 'reported',
-  },
-  reportedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  resolvedAt: {
-    type: Date,
-  },
-  resolutionNotes: {
-    type: String,
-  },
-  affectedBirds: {
-    type: Number,
-  },
-  casualties: {
-    type: Number,
-  },
-}, {
-  timestamps: true,
-});
-
-const Incident = mongoose.model('Incident', incidentSchema);
+const Incident = {
+  // Placeholder model - implement using Supabase in route handlers
+  // Example: const { data, error } = await supabase.from('incidents').select('*')
+};
 
 export default Incident;

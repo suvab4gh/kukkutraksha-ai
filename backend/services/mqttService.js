@@ -1,5 +1,5 @@
 import mqtt from 'mqtt';
-import { db } from '../config/firebase.js';
+import { supabase } from '../config/supabase.js';
 import Alert from '../models/Alert.js';
 
 class MQTTService {

@@ -1,41 +1,10 @@
-import mongoose from 'mongoose';
+// User model - using Supabase for storage
+// Users are managed in Supabase Auth and user metadata in PostgreSQL
+// Use Supabase client from '../config/supabase.js' in route handlers
 
-const userSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  role: {
-    type: String,
-    enum: ['farmer', 'admin', 'veterinarian'],
-    default: 'farmer',
-  },
-  firstName: {
-    type: String,
-  },
-  lastName: {
-    type: String,
-  },
-  phone: {
-    type: String,
-  },
-  district: {
-    type: String,
-  },
-  isActive: {
-    type: Boolean,
-    default: true,
-  },
-}, {
-  timestamps: true,
-});
-
-const User = mongoose.model('User', userSchema);
+const User = {
+  // Placeholder model - implement using Supabase in route handlers
+  // Example: const { data, error } = await supabase.from('users').select('*')
+};
 
 export default User;

@@ -45,34 +45,16 @@ const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longi
 
 ## 🔧 Optional APIs (Not Yet Configured)
 
-### 4. **Database - MongoDB Atlas** (Sensor Data Storage)
-- **Free Tier**: 512MB storage
-- **Setup Required**: Create account at https://www.mongodb.com/cloud/atlas
-- **Update**: `MONGODB_URI` in `/workspace/backend/.env`
-
-**Current Status**: Using local MongoDB (`mongodb://localhost:27017/kukkutraksha`)
-
----
-
-### 5. **Authentication - Supabase** (User Management)
+### 4. **Authentication - Supabase** (User Management)
 - **Free Tier**: Available
 - **Setup Required**: Create project at https://supabase.com
 - **Update**: `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `.env` files
 
-**Current Status**: Basic auth implemented, Supabase optional
+**Current Status**: Primary database and authentication system
 
 ---
 
-### 6. **Push Notifications - Firebase Cloud Messaging** (Mobile Alerts)
-- **Free Tier**: Generous limits
-- **Setup Required**: Create Firebase project
-- **Update**: Firebase config in `/workspace/.env.local`
-
-**Current Status**: Placeholder configured, not yet active
-
----
-
-### 7. **SMS Alerts - Twilio** (Critical Notifications)
+### 5. **SMS Alerts - Twilio** (Critical Notifications)
 - **Free Trial**: $15 credit
 - **Setup Required**: Account at https://twilio.com
 - **Integration**: Add to alert service
@@ -94,15 +76,14 @@ const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longi
 
 ### Immediate Actions Required:
 - [ ] **Create HiveMQ Cloud credentials** and update all `.env` files
-- [ ] **Set up MongoDB Atlas** (or use local MongoDB)
+- [ ] **Set up Supabase project** for database and authentication
 - [ ] **Test MQTT connection** between ESP32 and backend
 - [ ] **Verify weather API** is working for your farm location
 
 ### Optional Enhancements:
-- [ ] Configure Firebase for push notifications
 - [ ] Set up Twilio for SMS alerts
 - [ ] Add SendGrid for email reports
-- [ ] Enable Supabase for advanced user management
+- [ ] Configure additional monitoring tools
 
 ---
 
@@ -143,7 +124,7 @@ Look for: `✅ Connected to HiveMQ broker`
 ## 📊 Data Flow
 
 ```
-ESP32 Sensors → HiveMQ (TLS) → Backend → MongoDB
+ESP32 Sensors → HiveMQ (TLS) → Backend → Supabase PostgreSQL
                                       ↓
                               WebSocket → Dashboard
                                       ↓
@@ -176,5 +157,5 @@ ESP32 Sensors → HiveMQ (TLS) → Backend → MongoDB
 - **HiveMQ Cloud**: https://www.hivemq.com/docs/
 - **Open-Meteo API**: https://open-meteo.com/en/docs
 - **Leaflet.js**: https://leafletjs.com/
-- **MongoDB**: https://www.mongodb.com/docs/
+- **Supabase**: https://supabase.com/docs
 - **ESP32 MQTT**: https://randomnerdtutorials.com/esp32-mqtt-publish-subscribe-arduino-ide/

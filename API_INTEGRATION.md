@@ -59,12 +59,6 @@ Located in `/backend/services/diseasePredictionService.js`
 
 ## 🗄️ Database Services
 
-### **MongoDB Atlas** (Free Tier)
-- **URL**: https://www.mongodb.com/cloud/atlas
-- **Free Tier**: 512 MB storage
-- **Usage**: Time-series sensor data storage
-- **License**: Server Side Public License (SSPL)
-
 ### **Supabase** (Free Tier)
 - **URL**: https://supabase.com
 - **Free Tier**: 500 MB database, unlimited API requests
@@ -188,9 +182,6 @@ npm install
 
 ### 2. Environment Variables (`.env`)
 ```env
-# MongoDB
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/poultry
-
 # Supabase
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_KEY=your-service-key

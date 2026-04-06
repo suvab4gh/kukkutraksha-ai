@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import Alert from '../models/Alert.js';
+import { supabase } from '../config/supabase.js';
 import { verifyToken } from '../middleware/auth.js';
 
 // Get alerts for a farm
@@ -8,15 +8,20 @@ router.get('/farm/:farmId', verifyToken, async (req, res) => {
   try {
     const { limit = 50, unreadOnly = false } = req.query;
 
-    const query = { farmId: req.params.farmId };
+    let query = supabase
+      .from('alerts')
+      .select('*')
+      .eq('farm_id', req.params.farmId)
+      .order('created_at', { ascending: false })
+      .limit(parseInt(limit));
+
     if (unreadOnly === 'true') {
-      query.isRead = false;
+      query = query.eq('is_read', false);
     }
 
-    const alerts = await Alert.find(query)
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .populate('affectedFarms.farmId', 'farmName');
+    const { data: alerts, error } = await query;
+
+    if (error) throw error;
 
     res.json(alerts);
   } catch (error) {
@@ -30,14 +35,18 @@ router.get('/', verifyToken, async (req, res) => {
   try {
     const { limit = 100, severity, alertType } = req.query;
 
-    const query = {};
-    if (severity) query.severity = severity;
-    if (alertType) query.alertType = alertType;
+    let query = supabase
+      .from('alerts')
+      .select('*, farms(farm_name, district, location)')
+      .order('created_at', { ascending: false })
+      .limit(parseInt(limit));
 
-    const alerts = await Alert.find(query)
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .populate('farmId', 'farmName district location');
+    if (severity) query = query.eq('severity', severity);
+    if (alertType) query = query.eq('alert_type', alertType);
+
+    const { data: alerts, error } = await query;
+
+    if (error) throw error;
 
     res.json(alerts);
   } catch (error) {
@@ -49,13 +58,14 @@ router.get('/', verifyToken, async (req, res) => {
 // Mark alert as read
 router.patch('/:id/read', verifyToken, async (req, res) => {
   try {
-    const alert = await Alert.findByIdAndUpdate(
-      req.params.id,
-      { isRead: true },
-      { new: true }
-    );
+    const { data: alert, error } = await supabase
+      .from('alerts')
+      .update({ is_read: true })
+      .eq('id', req.params.id)
+      .select()
+      .single();
 
-    if (!alert) {
+    if (error || !alert) {
       return res.status(404).json({ error: 'Alert not found' });
     }
 
@@ -69,16 +79,17 @@ router.patch('/:id/read', verifyToken, async (req, res) => {
 // Resolve alert
 router.patch('/:id/resolve', verifyToken, async (req, res) => {
   try {
-    const alert = await Alert.findByIdAndUpdate(
-      req.params.id,
-      {
-        isResolved: true,
-        resolvedAt: new Date(),
-      },
-      { new: true }
-    );
+    const { data: alert, error } = await supabase
+      .from('alerts')
+      .update({
+        is_resolved: true,
+        resolved_at: new Date().toISOString(),
+      })
+      .eq('id', req.params.id)
+      .select()
+      .single();
 
-    if (!alert) {
+    if (error || !alert) {
       return res.status(404).json({ error: 'Alert not found' });
     }
 
@@ -94,20 +105,17 @@ router.get('/stats/summary', verifyToken, async (req, res) => {
   try {
     const { farmId } = req.query;
 
-    const matchStage = farmId ? { farmId: require('mongoose').Types.ObjectId(farmId) } : {};
+    // Fetch all alerts and calculate stats client-side
+    // (In production, use a Postgres function for better performance)
+    let query = supabase.from('alerts').select('severity, is_read');
 
-    const stats = await Alert.aggregate([
-      { $match: matchStage },
-      {
-        $group: {
-          _id: '$severity',
-          count: { $sum: 1 },
-          unreadCount: {
-            $sum: { $cond: [{ $eq: ['$isRead', false] }, 1, 0] },
-          },
-        },
-      },
-    ]);
+    if (farmId) {
+      query = query.eq('farm_id', farmId);
+    }
+
+    const { data: alerts, error } = await query;
+
+    if (error) throw error;
 
     const summary = {
       low: { total: 0, unread: 0 },
@@ -116,11 +124,13 @@ router.get('/stats/summary', verifyToken, async (req, res) => {
       critical: { total: 0, unread: 0 },
     };
 
-    stats.forEach((item) => {
-      summary[item._id] = {
-        total: item.count,
-        unread: item.unreadCount,
-      };
+    alerts.forEach((alert) => {
+      if (summary[alert.severity]) {
+        summary[alert.severity].total++;
+        if (!alert.is_read) {
+          summary[alert.severity].unread++;
+        }
+      }
     });
 
     res.json(summary);
@@ -134,16 +144,20 @@ router.get('/stats/summary', verifyToken, async (req, res) => {
 router.delete('/cleanup', verifyToken, async (req, res) => {
   try {
     const { days = 30 } = req.query;
-    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-    const result = await Alert.deleteMany({
-      isResolved: true,
-      resolvedAt: { $lt: cutoffDate },
-    });
+    const { data, error } = await supabase
+      .from('alerts')
+      .delete()
+      .eq('is_resolved', true)
+      .lt('resolved_at', cutoffDate)
+      .select();
+
+    if (error) throw error;
 
     res.json({
       message: 'Cleanup completed',
-      deletedCount: result.deletedCount,
+      deletedCount: data.length,
     });
   } catch (error) {
     console.error('Error cleaning up alerts:', error);
