@@ -7,11 +7,11 @@
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
 
-// MQTT Broker Settings
-const char* mqtt_server = "your-hivemq-broker.com";
-const int mqtt_port = 1883;
-const char* mqtt_user = "your_username";
-const char* mqtt_password = "your_password";
+// MQTT Broker Settings - HiveMQ Cloud (TLS)
+const char* mqtt_server = "56406e42c9674164ae68d36ac6812a11.s1.eu.hivemq.cloud";
+const int mqtt_port = 8883; // TLS port
+const char* mqtt_user = "kukkutraksha_user";
+const char* mqtt_password = "your_secure_password_here";
 const char* device_id = "ESP32_001"; // Unique device ID for this farm
 
 // MQTT Topic
