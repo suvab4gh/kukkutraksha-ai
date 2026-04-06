@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
+import { subscribeSensorData, disconnectMqtt } from '@/lib/mqtt';
 import axios from 'axios';
 import dynamic from 'next/dynamic';
 import { LogOut, Bell, Activity, MapPin, TrendingUp, AlertCircle } from 'lucide-react';
@@ -104,6 +105,7 @@ export default function FarmerDashboard() {
   const [sensorHealthData, setSensorHealthData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const farmRef = useRef<Farm | null>(null);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -116,12 +118,27 @@ export default function FarmerDashboard() {
     fetchFarmData();
     connectWebSocket();
 
+    // Subscribe to direct MQTT updates for real-time sensor data
+    const unsubscribe = subscribeSensorData((_deviceId, data) => {
+      if (!farmRef.current) return;
+      const sensorData: SensorData = { ...data, timestamp: data.timestamp || new Date().toISOString() };
+      setCurrentData(sensorData);
+      setHistoricalData((prev) => [...prev.slice(-49), sensorData]);
+    });
+
     return () => {
       if (ws) {
         ws.close();
       }
+      unsubscribe();
+      disconnectMqtt();
     };
   }, [isAuthenticated]);
+
+  // Keep farmRef in sync with farm state
+  useEffect(() => {
+    farmRef.current = farm;
+  }, [farm]);
 
   const fetchFarmData = async () => {
     try {

@@ -19,19 +19,19 @@ class MQTTService {
     if (
       !this.brokerUrl || 
       !this.options.username || 
-      !this.options.password ||
-      this.brokerUrl === '56406e42c9674164ae68d36ac6812a11.s1.eu.hivemq.cloud' && this.options.password === 'YOUR_MQTT_PASSWORD_HERE'
+      !this.options.password
     ) {
       console.warn('⚠️  MQTT broker credentials not configured. MQTT service will be disabled.');
       console.warn('   Update MQTT_BROKER_URL, MQTT_USERNAME, and MQTT_PASSWORD in backend/.env');
-      console.warn('   Get credentials from HiveMQ Cloud Console: https://www.hivemq.com/cloud/console');
       return;
     }
 
     // Add protocol prefix if missing
     let brokerUrl = this.brokerUrl;
-    if (!brokerUrl.startsWith('mqtt://') && !brokerUrl.startsWith('wss://')) {
-      brokerUrl = `mqtts://${brokerUrl}`;
+    const port = process.env.MQTT_PORT || '8883';
+    if (!brokerUrl.startsWith('mqtt://') && !brokerUrl.startsWith('wss://') && !brokerUrl.startsWith('mqtts://')) {
+      // Port 8884 uses WSS (WebSocket Secure), port 8883 uses MQTTS (MQTT over TLS)
+      brokerUrl = port === '8884' ? `wss://${brokerUrl}:${port}/mqtt` : `mqtts://${brokerUrl}:${port}`;
     }
 
     console.log('🔗 Connecting to HiveMQ broker...');
