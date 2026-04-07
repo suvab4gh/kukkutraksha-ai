@@ -18,7 +18,7 @@ import SensorHealthMonitor from '@/components/SensorHealthMonitor';
 import SensorHealthPanel from '@/components/SensorHealthPanel';
 import AlertsPanel from '@/components/AlertsPanel';
 import { getOverallFarmStatus } from '@/lib/utils';
-import { westBengalPoultryData, bengaliTranslations, type PoultryData } from '@/data/westBengalPoultry';
+import { westBengalPoultryData, type PoultryData } from '@/data/westBengalPoultry';
 
 // Dynamic import for FarmMap to avoid SSR issues with Leaflet
 const FarmMap = dynamic(() => import('@/components/FarmMap'), { ssr: false });
