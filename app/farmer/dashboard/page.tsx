@@ -196,8 +196,16 @@ export default function FarmerDashboard() {
       // Initialize mock data for new features (will be replaced with real API calls)
       initializeMockSensorData();
       
-      // Load West Bengal poultry data for demo (first farm as default)
-      if (westBengalPoultryData.length > 0) {
+      // Load West Bengal poultry data for demo, matching the fetched farm when possible
+      const matchedPoultryData = farmResponse.data?.poultryFarmId
+        ? westBengalPoultryData.find(
+            (entry: PoultryData) => entry.poultryFarmId === farmResponse.data.poultryFarmId
+          )
+        : undefined;
+
+      if (matchedPoultryData) {
+        setPoultryData(matchedPoultryData);
+      } else if (!farmResponse.data && westBengalPoultryData.length > 0) {
         setPoultryData(westBengalPoultryData[0]);
       }
 
