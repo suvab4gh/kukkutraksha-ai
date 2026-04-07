@@ -37,7 +37,7 @@ export default function SensorCard({ title, value, unit, type, icon }: SensorCar
 
   return (
     <div 
-      className={`bg-gradient-to-br ${getGradientBackground()} rounded-xl shadow-lg p-4 md:p-6 border-l-4 transition-all hover:shadow-xl relative overflow-hidden cursor-pointer transform hover:scale-105`} 
+      className={`bg-gradient-to-br ${getGradientBackground()} rounded-xl shadow-lg p-4 md:p-6 border-l-4 transition-all hover:shadow-xl relative overflow-hidden`} 
       style={{ borderLeftColor: risk.color.replace('text-', '#') }}
     >
       {/* Gradient Bar Indicator */}
