@@ -548,32 +548,64 @@ export default function FarmerDashboard() {
             
             <div className="flex items-center gap-3">
               {/* Language Selector */}
-              <div className="relative group">
-                <button className="flex items-center gap-2 px-3 py-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors text-white font-semibold">
+              <details className="relative">
+                <summary
+                  className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors text-white font-semibold"
+                  aria-haspopup="menu"
+                  aria-label="Select language"
+                >
                   <Globe className="w-4 h-4" />
                   <span className="hidden md:inline">{selectedLanguage === 'en' ? 'English' : selectedLanguage === 'hi' ? 'हिंदी' : 'বাংলা'}</span>
-                </button>
-                <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl overflow-hidden hidden group-hover:block border border-gray-200">
+                </summary>
+                <div
+                  className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200 z-10"
+                  role="menu"
+                  aria-label="Language options"
+                >
                   <button
-                    onClick={() => setSelectedLanguage('en')}
+                    onClick={(e) => {
+                      setSelectedLanguage('en');
+                      const details = e.currentTarget.closest('details');
+                      if (details instanceof HTMLDetailsElement) {
+                        details.open = false;
+                      }
+                    }}
+                    role="menuitemradio"
+                    aria-checked={selectedLanguage === 'en'}
                     className={`w-full text-left px-4 py-2 hover:bg-green-50 transition-colors ${selectedLanguage === 'en' ? 'bg-green-100 text-green-700 font-semibold' : 'text-gray-700'}`}
                   >
                     🇬🇧 English
                   </button>
                   <button
-                    onClick={() => setSelectedLanguage('hi')}
+                    onClick={(e) => {
+                      setSelectedLanguage('hi');
+                      const details = e.currentTarget.closest('details');
+                      if (details instanceof HTMLDetailsElement) {
+                        details.open = false;
+                      }
+                    }}
+                    role="menuitemradio"
+                    aria-checked={selectedLanguage === 'hi'}
                     className={`w-full text-left px-4 py-2 hover:bg-green-50 transition-colors ${selectedLanguage === 'hi' ? 'bg-green-100 text-green-700 font-semibold' : 'text-gray-700'}`}
                   >
                     🇮🇳 हिंदी
                   </button>
                   <button
-                    onClick={() => setSelectedLanguage('bn')}
+                    onClick={(e) => {
+                      setSelectedLanguage('bn');
+                      const details = e.currentTarget.closest('details');
+                      if (details instanceof HTMLDetailsElement) {
+                        details.open = false;
+                      }
+                    }}
+                    role="menuitemradio"
+                    aria-checked={selectedLanguage === 'bn'}
                     className={`w-full text-left px-4 py-2 hover:bg-green-50 transition-colors ${selectedLanguage === 'bn' ? 'bg-green-100 text-green-700 font-semibold' : 'text-gray-700'}`}
                   >
                     🇮🇳 বাংলা
                   </button>
                 </div>
-              </div>
+              </details>
               
               {/* Help Button for New Users */}
               <button
