@@ -37,7 +37,7 @@ export default function SensorCard({ title, value, unit, type, icon }: SensorCar
 
   return (
     <div 
-      className={`bg-gradient-to-br ${getGradientBackground()} rounded-xl shadow-lg p-6 border-l-4 transition-all hover:shadow-xl relative overflow-hidden`} 
+      className={`bg-gradient-to-br ${getGradientBackground()} rounded-xl shadow-lg p-4 md:p-6 border-l-4 transition-all hover:shadow-xl relative overflow-hidden`} 
       style={{ borderLeftColor: risk.color.replace('text-', '#') }}
     >
       {/* Gradient Bar Indicator */}
@@ -48,30 +48,43 @@ export default function SensorCard({ title, value, unit, type, icon }: SensorCar
       ></div>
 
       <div className="flex items-start justify-between mb-2 relative z-10">
-        <div>
-          <p className="text-sm text-gray-700 font-semibold">{title}</p>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-3xl font-bold text-gray-900">{value.toFixed(1)}</span>
-            <span className="text-sm text-gray-600 font-medium">{unit}</span>
+        <div className="flex-1">
+          <p className="text-xs md:text-sm text-gray-700 font-semibold">{title}</p>
+          <div className="flex items-baseline gap-1 md:gap-2 mt-1">
+            <span className="text-2xl md:text-3xl font-bold text-gray-900">{value.toFixed(1)}</span>
+            <span className="text-xs md:text-sm text-gray-600 font-medium">{unit}</span>
           </div>
         </div>
-        <span className="text-3xl">{icon}</span>
+        <span className="text-3xl md:text-4xl">{icon}</span>
       </div>
       
-      <div className="mt-4 flex items-center justify-between relative z-10">
-        <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${risk.bgColor} ${risk.color} shadow-sm`}>
-          {risk.status}
+      <div className="mt-3 md:mt-4 flex items-center justify-between relative z-10">
+        <div className={`inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-semibold ${risk.bgColor} ${risk.color} shadow-sm`}>
+          {risk.status === 'Safe' ? '✅ सुरक्षित' : risk.status === 'Moderate' ? '⚠️ सावधान' : '🚨 खतरा'}
         </div>
         
-        {/* Gradient Percentage Display */}
+        {/* Simple Health Indicator - Easier to Understand */}
         <div className="text-right">
-          <div className="text-xs text-gray-600 font-medium">Health</div>
-          <div className={`text-lg font-bold ${
+          <div className="flex items-center gap-1">
+            <div className="w-8 md:w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all duration-500 ${
+                  gradientPercentage < 30 ? 'bg-green-500' : 
+                  gradientPercentage < 60 ? 'bg-yellow-500' : 
+                  'bg-red-500'
+                }`}
+                style={{ width: `${100 - gradientPercentage}%` }}
+              ></div>
+            </div>
+          </div>
+          <div className={`text-xs md:text-sm font-bold mt-1 ${
             gradientPercentage < 30 ? 'text-green-700' : 
             gradientPercentage < 60 ? 'text-yellow-700' : 
             'text-red-700'
           }`}>
-            {100 - gradientPercentage}%
+            {gradientPercentage < 30 ? 'अच्छा (Good)' : 
+             gradientPercentage < 60 ? 'सावधान (Caution)' : 
+             'खराब (Bad)'}
           </div>
         </div>
       </div>

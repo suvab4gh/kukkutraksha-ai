@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { subscribeSensorData, disconnectMqtt } from '@/lib/mqtt';
 import axios from 'axios';
 import dynamic from 'next/dynamic';
-import { LogOut, Bell, Activity, MapPin, TrendingUp, AlertCircle } from 'lucide-react';
+import { LogOut, Bell, Activity, MapPin, TrendingUp, AlertCircle, Globe } from 'lucide-react';
 import SensorCard from '@/components/SensorCard';
 import SensorChart from '@/components/SensorChart';
 import SensorTrendCard from '@/components/SensorTrendCard';
@@ -18,6 +18,7 @@ import SensorHealthMonitor from '@/components/SensorHealthMonitor';
 import SensorHealthPanel from '@/components/SensorHealthPanel';
 import AlertsPanel from '@/components/AlertsPanel';
 import { getOverallFarmStatus } from '@/lib/utils';
+import { westBengalPoultryData, type PoultryData } from '@/data/westBengalPoultry';
 
 // Dynamic import for FarmMap to avoid SSR issues with Leaflet
 const FarmMap = dynamic(() => import('@/components/FarmMap'), { ssr: false });
@@ -106,11 +107,18 @@ export default function FarmerDashboard() {
   const [loading, setLoading] = useState(true);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const farmRef = useRef<Farm | null>(null);
+  
+  // Language selection state (English, Hindi, Bengali)
+  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'hi' | 'bn'>('en');
+  
+  // West Bengal poultry data integration
+  const [poultryData, setPoultryData] = useState<PoultryData | null>(null);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // For quick test login, skip auth check if user is already set
+    if (!isAuthenticated && !user) {
       router.push('/auth/login?type=farmer');
       return;
     }
@@ -133,7 +141,7 @@ export default function FarmerDashboard() {
       unsubscribe();
       disconnectMqtt();
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   // Keep farmRef in sync with farm state
   useEffect(() => {
@@ -187,6 +195,19 @@ export default function FarmerDashboard() {
 
       // Initialize mock data for new features (will be replaced with real API calls)
       initializeMockSensorData();
+      
+      // Load West Bengal poultry data for demo, matching the fetched farm when possible
+      const matchedPoultryData = farmResponse.data?.poultryFarmId
+        ? westBengalPoultryData.find(
+            (entry: PoultryData) => entry.poultryFarmId === farmResponse.data.poultryFarmId
+          )
+        : undefined;
+
+      if (matchedPoultryData) {
+        setPoultryData(matchedPoultryData);
+      } else if (!farmResponse.data && westBengalPoultryData.length > 0) {
+        setPoultryData(westBengalPoultryData[0]);
+      }
 
       setLoading(false);
     } catch (error) {
@@ -496,93 +517,232 @@ export default function FarmerDashboard() {
     : { status: 'No Data', color: '#6b7280', icon: '⚪' };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Activity className="w-8 h-8 text-green-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{farm?.farmName}</h1>
-              <p className="text-sm text-gray-600">{farm?.district} District</p>
+    <div className="min-h-screen bg-gradient-to-b from-green-50 via-blue-50 to-white">
+      {/* Header - Simplified with larger text */}
+      <header className="bg-gradient-to-r from-green-600 to-green-700 shadow-lg sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-white p-2 rounded-full shadow-md">
+                <Activity className="w-8 h-8 text-green-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-md">
+                  {poultryData ? (selectedLanguage === 'bn' ? poultryData.farmNameBn : poultryData.farmName) : farm?.farmName}
+                </h1>
+                <p className="text-sm md:text-base text-green-100 flex items-center gap-1">
+                  <MapPin className="w-4 h-4" />
+                  {poultryData ? (
+                    <>
+                      {selectedLanguage === 'bn' ? poultryData.districtBn : poultryData.district}
+                      {selectedLanguage === 'en' && ' District'}
+                      {selectedLanguage === 'hi' && ' जिला'}
+                      {selectedLanguage === 'bn' && ' জেলা'}
+                    </>
+                  ) : (
+                    <>{farm?.district} जिला (District)</>
+                  )}
+                </p>
+              </div>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm text-gray-600">Farm Status</p>
-              <p className="text-lg font-semibold" style={{ color: overallStatus.color }}>
-                {overallStatus.icon} {overallStatus.status}
-              </p>
+            
+            <div className="flex items-center gap-3">
+              {/* Language Selector */}
+              <details className="relative">
+                <summary
+                  className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors text-white font-semibold"
+                  aria-haspopup="menu"
+                  aria-label="Select language"
+                >
+                  <Globe className="w-4 h-4" />
+                  <span className="hidden md:inline">{selectedLanguage === 'en' ? 'English' : selectedLanguage === 'hi' ? 'हिंदी' : 'বাংলা'}</span>
+                </summary>
+                <div
+                  className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200 z-10"
+                  role="menu"
+                  aria-label="Language options"
+                >
+                  <button
+                    onClick={(e) => {
+                      setSelectedLanguage('en');
+                      const details = e.currentTarget.closest('details');
+                      if (details instanceof HTMLDetailsElement) {
+                        details.open = false;
+                      }
+                    }}
+                    role="menuitemradio"
+                    aria-checked={selectedLanguage === 'en'}
+                    className={`w-full text-left px-4 py-2 hover:bg-green-50 transition-colors ${selectedLanguage === 'en' ? 'bg-green-100 text-green-700 font-semibold' : 'text-gray-700'}`}
+                  >
+                    🇬🇧 English
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      setSelectedLanguage('hi');
+                      const details = e.currentTarget.closest('details');
+                      if (details instanceof HTMLDetailsElement) {
+                        details.open = false;
+                      }
+                    }}
+                    role="menuitemradio"
+                    aria-checked={selectedLanguage === 'hi'}
+                    className={`w-full text-left px-4 py-2 hover:bg-green-50 transition-colors ${selectedLanguage === 'hi' ? 'bg-green-100 text-green-700 font-semibold' : 'text-gray-700'}`}
+                  >
+                    🇮🇳 हिंदी
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      setSelectedLanguage('bn');
+                      const details = e.currentTarget.closest('details');
+                      if (details instanceof HTMLDetailsElement) {
+                        details.open = false;
+                      }
+                    }}
+                    role="menuitemradio"
+                    aria-checked={selectedLanguage === 'bn'}
+                    className={`w-full text-left px-4 py-2 hover:bg-green-50 transition-colors ${selectedLanguage === 'bn' ? 'bg-green-100 text-green-700 font-semibold' : 'text-gray-700'}`}
+                  >
+                    🇮🇳 বাংলা
+                  </button>
+                </div>
+              </details>
+              
+              {/* Help Button for New Users */}
+              <button
+                className="hidden md:flex items-center gap-2 px-4 py-2 bg-yellow-400 text-yellow-900 rounded-full hover:bg-yellow-300 transition-colors shadow-md font-semibold"
+                onClick={() => alert('📞 Need Help? Call: 1800-XXX-XXXX\n💬 WhatsApp Support Available\n🎥 Watch Tutorial Videos')}
+              >
+                <span className="text-xl">🆘</span>
+                <span>{selectedLanguage === 'bn' ? 'সাহায্য' : selectedLanguage === 'hi' ? 'सहायता' : 'Help'}</span>
+              </button>
+              
+              {/* Farm Status - Larger and Clearer */}
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 text-center">
+                <p className="text-xs text-green-100 font-medium">
+                  {selectedLanguage === 'bn' ? 'ফার্মের অবস্থা' : selectedLanguage === 'hi' ? 'फार्म स्थिति' : 'Farm Status'}
+                </p>
+                <p className="text-xl md:text-2xl font-bold text-white drop-shadow-md">
+                  {overallStatus.icon} {overallStatus.status === 'Safe' ? (selectedLanguage === 'bn' ? 'নিরাপদ' : selectedLanguage === 'hi' ? 'सुरक्षित' : 'Safe') : overallStatus.status}
+                </p>
+              </div>
+              
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-md font-semibold"
+                title={selectedLanguage === 'bn' ? 'লগ আউট' : selectedLanguage === 'hi' ? 'लॉग आउट' : 'Logout'}
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden md:inline">{selectedLanguage === 'bn' ? 'লগ আউট' : selectedLanguage === 'hi' ? 'लॉग आउट' : 'Logout'}</span>
+              </button>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Alert Banner */}
-        {overallStatus.status.includes('Critical') && (
-          <div className="mb-6 p-4 bg-red-100 border-l-4 border-red-600 rounded-lg flex items-center gap-3">
-            <AlertCircle className="w-6 h-6 text-red-600" />
+      <main className="container mx-auto px-4 py-6">
+        {/* Welcome Message for New Users */}
+        <div className="mb-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-xl p-6 text-white">
+          <div className="flex items-center gap-4">
+            <div className="text-5xl">👋</div>
             <div>
-              <p className="font-semibold text-red-900">⚠️ Critical Alert!</p>
-              <p className="text-red-800">
-                Disease conditions detected. Take immediate preventive action.
+              <h2 className="text-2xl md:text-3xl font-bold mb-2">नमस्ते, {user?.displayName || 'किसान भाई'}! (Namaste!)</h2>
+              <p className="text-blue-100 text-sm md:text-base">
+                Welcome to your Smart Farm Dashboard. Monitor your farm health in real-time.
+                <br />
+                अपने स्मार्ट फार्म डैशबोर्ड में आपका स्वागत है। अपने फार्म की सेहत को रियल-टाइम में मॉनिटर करें।
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Alert Banner - More Prominent */}
+        {overallStatus.status.includes('Critical') && (
+          <div className="mb-6 p-6 bg-red-50 border-l-8 border-red-600 rounded-xl flex items-center gap-4 shadow-lg animate-pulse">
+            <AlertCircle className="w-10 h-10 text-red-600 flex-shrink-0" />
+            <div>
+              <p className="text-xl font-bold text-red-900">⚠️ तुरंत ध्यान दें! (Critical Alert!)</p>
+              <p className="text-red-800 text-base mt-1">
+                बीमारी का खतरा detected. तुरंत कार्रवाई करें! (Disease risk detected. Take immediate action!)
+              </p>
+              <button className="mt-3 px-6 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors font-semibold shadow-md">
+                📞 Call Expert Now
+              </button>
             </div>
           </div>
         )}
 
-        {/* PRIORITY 1: SENSOR DATA FROM HIVEMQ - REAL-TIME METRICS WITH GRADIENT */}
-        
-        {/* Sensor Health Dashboard Section - iPhone Style */}
-        <div className="mb-8">
-          <SensorHealthPanel
-            sensors={sensorHealthData}
-          />
+        {/* Quick Action Buttons - Large and Easy to Tap */}
+        <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <button className="bg-white rounded-xl shadow-lg p-4 hover:shadow-xl transition-all flex flex-col items-center gap-2 border-2 border-green-200 hover:border-green-400">
+            <span className="text-4xl">📊</span>
+            <span className="text-sm font-semibold text-gray-700 text-center">View Report<br/>रिपोर्ट देखें</span>
+          </button>
+          <button className="bg-white rounded-xl shadow-lg p-4 hover:shadow-xl transition-all flex flex-col items-center gap-2 border-2 border-blue-200 hover:border-blue-400">
+            <span className="text-4xl">📹</span>
+            <span className="text-sm font-semibold text-gray-700 text-center">Watch Video<br/>वीडियो देखें</span>
+          </button>
+          <button className="bg-white rounded-xl shadow-lg p-4 hover:shadow-xl transition-all flex flex-col items-center gap-2 border-2 border-yellow-200 hover:border-yellow-400">
+            <span className="text-4xl">💬</span>
+            <span className="text-sm font-semibold text-gray-700 text-center">Chat Support<br/>चैट सहायता</span>
+          </button>
+          <button className="bg-white rounded-xl shadow-lg p-4 hover:shadow-xl transition-all flex flex-col items-center gap-2 border-2 border-purple-200 hover:border-purple-400">
+            <span className="text-4xl">📞</span>
+            <span className="text-sm font-semibold text-gray-700 text-center">Call Expert<br/>विशेषज्ञ को कॉल</span>
+          </button>
         </div>
 
-        {/* Sensor Cards with Gradient Indicators */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        {/* PRIORITY 1: SENSOR DATA FROM HIVEMQ - REAL-TIME METRICS WITH GRADIENT */}
+        
+        {/* Section Title - Hindi + English */}
+        <div className="mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <span className="text-4xl">📈</span>
+            <div>
+              <div>Live Sensor Data / लाइव सेंसर डेटा</div>
+              <div className="text-sm font-normal text-gray-600 mt-1">Real-time monitoring from your farm</div>
+            </div>
+          </h2>
+        </div>
+
+        {/* Sensor Health Dashboard Section - iPhone Style */}
+        <div className="mb-8">
+          <SensorHealthPanel sensors={sensorHealthData} />
+        </div>
+
+        {/* Sensor Cards with Gradient Indicators - Larger and Clearer */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {currentData && (
             <>
               <SensorCard
-                title="Ammonia"
+                title="Ammonia / अमोनिया"
                 value={currentData.ammonia}
                 unit="ppm"
                 type="ammonia"
                 icon="💨"
               />
               <SensorCard
-                title="CO₂"
+                title="CO₂ / कार्बन डाईऑक्साइड"
                 value={currentData.co2}
                 unit="ppm"
                 type="co2"
                 icon="🌫️"
               />
               <SensorCard
-                title="Temperature"
+                title="Temperature / तापमान"
                 value={currentData.temperature}
                 unit="°C"
                 type="temperature"
                 icon="🌡️"
               />
               <SensorCard
-                title="TDS"
+                title="TDS / पानी की गुणवत्ता"
                 value={currentData.tds}
                 unit="ppm"
                 type="tds"
                 icon="💧"
               />
               <SensorCard
-                title="Humidity"
+                title="Humidity / नमी"
                 value={currentData.humidity}
                 unit="%"
                 type="humidity"
@@ -594,6 +754,12 @@ export default function FarmerDashboard() {
 
         {/* Sensor Health Monitoring Section */}
         <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-4xl">🔧</span>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+              Sensor Health / सेंसर स्वास्थ्य
+            </h2>
+          </div>
           <SensorHealthMonitor
             sensors={sensors}
             onUpdateSensor={handleUpdateSensor}
@@ -604,6 +770,12 @@ export default function FarmerDashboard() {
         {/* Disease Spread Heatmap */}
         {farm && (
           <div className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-4xl">🗺️</span>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                Farm Zone Map / फार्म ज़ोन मैप
+              </h2>
+            </div>
             <SensorZoneHeatmap
               zones={generateMockZoneData()}
               gridLayout={{ rows: 3, cols: 5 }}
@@ -616,11 +788,19 @@ export default function FarmerDashboard() {
           {/* Sensor Trends - Individual Cards with Gradient Graphs */}
           <div className="lg:col-span-2 space-y-6">
             <div>
-              <div className="flex items-center gap-2 mb-6">
-                <TrendingUp className="w-6 h-6 text-green-600" />
-                <h2 className="text-2xl font-bold text-gray-900">Live Sensor Trends (24 Hours)</h2>
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                  HiveMQ Connected
+              <div className="flex items-center gap-3 mb-6">
+                <TrendingUp className="w-8 h-8 text-green-600" />
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                    24-Hour Trends / 24 घंटे का रुझान
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Real-time data from HiveMQ / HiveMQ से रियल-टाइम डेटा
+                  </p>
+                </div>
+                <span className="px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-semibold flex items-center gap-2">
+                  <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                  Live Connected
                 </span>
               </div>
               
@@ -628,7 +808,7 @@ export default function FarmerDashboard() {
                 {/* Ammonia Trend Card */}
                 {currentData && historicalData.length > 0 && (
                   <SensorTrendCard
-                    title="Ammonia Level"
+                    title="Ammonia Level / अमोनिया स्तर"
                     icon="💨"
                     currentValue={currentData.ammonia}
                     unit="ppm"
@@ -646,7 +826,7 @@ export default function FarmerDashboard() {
                 {/* CO₂ Trend Card */}
                 {currentData && historicalData.length > 0 && (
                   <SensorTrendCard
-                    title="CO₂ Level"
+                    title="CO₂ Level / CO₂ स्तर"
                     icon="🌫️"
                     currentValue={currentData.co2}
                     unit="ppm"
@@ -664,7 +844,7 @@ export default function FarmerDashboard() {
                 {/* Temperature Trend Card */}
                 {currentData && historicalData.length > 0 && (
                   <SensorTrendCard
-                    title="Temperature"
+                    title="Temperature / तापमान"
                     icon="🌡️"
                     currentValue={currentData.temperature}
                     unit="°C"
@@ -682,7 +862,7 @@ export default function FarmerDashboard() {
                 {/* TDS Trend Card */}
                 {currentData && historicalData.length > 0 && (
                   <SensorTrendCard
-                    title="TDS (Water Quality)"
+                    title="TDS (Water Quality) / TDS (पानी की गुणवत्ता)"
                     icon="💧"
                     currentValue={currentData.tds}
                     unit="ppm"
@@ -700,7 +880,7 @@ export default function FarmerDashboard() {
                 {/* Humidity Trend Card */}
                 {currentData && historicalData.length > 0 && (
                   <SensorTrendCard
-                    title="Humidity"
+                    title="Humidity / नमी"
                     icon="💦"
                     currentValue={currentData.humidity}
                     unit="%"
@@ -739,28 +919,81 @@ export default function FarmerDashboard() {
               />
             )}
 
-            {/* Alerts Panel */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Bell className="w-5 h-5 text-yellow-600" />
-                <h2 className="text-xl font-bold text-gray-900">Recent Alerts</h2>
+            {/* Alerts Panel - More Prominent */}
+            <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 rounded-xl shadow-lg p-6 border-2 border-yellow-200">
+              <div className="flex items-center gap-3 mb-4">
+                <Bell className="w-6 h-6 text-yellow-600" />
+                <h2 className="text-xl font-bold text-gray-900">
+                  Recent Alerts / हालिया अलर्ट
+                </h2>
+                {alerts.length > 0 && (
+                  <span className="ml-auto px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold">
+                    {alerts.length} New
+                  </span>
+                )}
               </div>
               <AlertsPanel alerts={alerts} />
+              
+              {/* Quick Help for Alerts */}
+              <div className="mt-4 pt-4 border-t border-yellow-200">
+                <p className="text-xs text-gray-600 mb-2">Need help with alerts? / अलर्ट में सहायता चाहिए?</p>
+                <button className="w-full py-2 bg-yellow-400 text-yellow-900 rounded-lg hover:bg-yellow-300 transition-colors font-semibold text-sm flex items-center justify-center gap-2">
+                  <span>📞</span> Call Expert / विशेषज्ञ को कॉल करें
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* MOVED TO BOTTOM: Nearby Farms & Location Map */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <MapPin className="w-5 h-5 text-green-600" />
-            <h2 className="text-xl font-bold text-gray-900">Farm Location & Nearby Farms</h2>
-            <span className="ml-auto text-sm text-gray-600">{nearbyFarms.length} farms within 10km</span>
+        <div className="bg-gradient-to-r from-blue-50 via-green-50 to-blue-50 rounded-xl shadow-lg p-6 border-2 border-blue-100">
+          <div className="flex items-center gap-3 mb-4">
+            <MapPin className="w-6 h-6 text-green-600" />
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+                Farm Location / फार्म का स्थान
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {nearbyFarms.length} farms nearby / आसपास के खेत
+              </p>
+            </div>
+            <span className="ml-auto px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+              {nearbyFarms.length} farms within 10km
+            </span>
           </div>
-          <div className="h-96">
+          <div className="h-96 rounded-lg overflow-hidden shadow-inner border-2 border-blue-200">
             {farm && <FarmMap farm={farm} nearbyFarms={nearbyFarms} />}
           </div>
         </div>
+
+        {/* Footer with Support Info */}
+        <footer className="mt-8 bg-white rounded-xl shadow-lg p-6 text-center">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-3xl">📞</span>
+              <p className="font-semibold text-gray-900">24/7 Helpline</p>
+              <p className="text-sm text-gray-600">1800-XXX-XXXX</p>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-3xl">💬</span>
+              <p className="font-semibold text-gray-900">WhatsApp Support</p>
+              <p className="text-sm text-gray-600">+91 XXXXX XXXXX</p>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-3xl">🎥</span>
+              <p className="font-semibold text-gray-900">Video Tutorials</p>
+              <button className="text-sm text-blue-600 hover:underline font-medium">Watch Now →</button>
+            </div>
+          </div>
+          <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+            <p className="text-xs text-gray-500">
+              Made with ❤️ for Indian Farmers | भारतीय किसानों के लिए बनाया गया
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Powered by HiveMQ IoT | Real-time Sensor Monitoring
+            </p>
+          </div>
+        </footer>
       </main>
     </div>
   );
